@@ -8,6 +8,7 @@ import javax.inject.Inject;
 import org.jboss.forge.project.Project;
 import org.jboss.forge.project.facets.events.InstallFacets;
 import org.jboss.forge.shell.ShellMessages;
+import org.jboss.forge.shell.ShellPrompt;
 import org.jboss.forge.shell.plugins.Alias;
 import org.jboss.forge.shell.plugins.Command;
 import org.jboss.forge.shell.plugins.Option;
@@ -17,7 +18,13 @@ import org.jboss.forge.shell.plugins.RequiresProject;
 import org.jboss.forge.shell.plugins.SetupCommand;
 import org.jboss.forge.shell.util.NativeSystemCall;
 
+import com.redhat.openshift.express.core.ICartridge;
+import com.redhat.openshift.express.core.IOpenshiftService;
+import com.redhat.openshift.express.core.OpenShiftServiceFactory;
 import com.redhat.openshift.express.core.OpenshiftException;
+import com.redhat.openshift.express.core.internal.ApplicationInfo;
+import com.redhat.openshift.express.core.internal.InternalUser;
+import com.redhat.openshift.express.core.internal.UserInfo;
 
 public @Alias("rhc-express")
 @RequiresProject
@@ -32,6 +39,8 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
 
     @Inject
     OpenShiftExpressConfiguration configuration;
+    
+    @Inject ShellPrompt prompt;
 
     @SetupCommand
     public void setup(PipeOut out, @Option(name = "app") final String app, @Option(name = "rhlogin") final String rhLogin)
@@ -53,11 +62,53 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
         String[] commitParams = { "commit", "-a", "-m", "\"deploy\"" };
         NativeSystemCall.execFromPath("git", commitParams, out, project.getProjectRoot());
 
+        String[] remoteParams = { "merge", "openshift/master", "-s", "recursive", "-X", "ours" };
+        if (NativeSystemCall.execFromPath("git", remoteParams, out, project.getProjectRoot()) != 0) {
+           ShellMessages.error(out, "Failed to rebase onto openshift express");
+        }
+        
         /*
          * --progress is needed to see git status output from stderr
          */
-        String[] pushParams = { "push", "openshift", "HEAD", "-f", "--porcelain" };
+        String[] pushParams = { "push", "openshift", "HEAD", "-f", "--progress" };
         NativeSystemCall.execFromPath("git", pushParams, out, project.getProjectRoot());
+    }
+    
+    @Command
+    public void status(PipeOut out) throws Exception {
+        String rhLogin = Util.getRhLogin(out, prompt);
+        String name = Util.getName(project, prompt);
+        String password = Util.getPassword(prompt);
+        
+        IOpenshiftService openshiftService = OpenShiftServiceFactory.create();
+        String status = openshiftService.getStatus(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password));
+        out.print(status);
+    }
+    
+    @Command
+    public void destroy(PipeOut out) throws Exception {
+        String rhLogin = Util.getRhLogin(out, prompt);
+        String name = Util.getName(project, prompt);
+        String password = Util.getPassword(prompt);
+        boolean confirm = prompt.promptBoolean("About to destroy application " + name + " on OpenShift Express. Are you sure?", true);
+        
+        if (confirm) {
+           IOpenshiftService openshiftService = OpenShiftServiceFactory.create();
+           openshiftService.destroyApplication(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password));
+           ShellMessages.success(out, "Destroyed application " + name + " on OpenShift Express");
+        }
+    }
+    
+    @Command
+    public void list(PipeOut out) throws Exception {
+        String rhLogin = Util.getRhLogin(out, prompt);
+        String password = Util.getPassword(prompt);
+        IOpenshiftService openshiftService = OpenShiftServiceFactory.create();
+        UserInfo info = openshiftService.getUserInfo(new InternalUser(rhLogin, password));
+        ShellMessages.info(out, "Applications on OpenShift Express");
+        for (ApplicationInfo app : info.getApplicationInfos()) {
+           out.println(app.toString());
+        }
     }
 
 }

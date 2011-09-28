@@ -47,28 +47,28 @@ public class UserInfoResponseUnmarshaller extends AbstractOpenshiftJsonResponseU
 		String namespace = getString(IOpenshiftJsonConstants.PROPERTY_NAMESPACE, userInfoNode);
 		String rhcDomain = getString(IOpenshiftJsonConstants.PROPERTY_RHC_DOMAIN, userInfoNode);
 
-		List<ApplicationInfo> applicationInfos = createApplicationInfos(dataNode.get(IOpenshiftJsonConstants.PROPERTY_APP_INFO));
+		List<ApplicationInfo> applicationInfos = createApplicationInfos(namespace, rhcDomain, dataNode.get(IOpenshiftJsonConstants.PROPERTY_APP_INFO));
 
 		return new UserInfo(rhlogin, uuid, sshPublicKey, rhcDomain, namespace, applicationInfos);
 	}
 
-	private List<ApplicationInfo> createApplicationInfos(ModelNode appInfoNode) throws DatatypeConfigurationException {
+	private List<ApplicationInfo> createApplicationInfos( String namespace, String rhcDomain, ModelNode appInfoNode) throws DatatypeConfigurationException {
 		List<ApplicationInfo> applicationInfos = new ArrayList<ApplicationInfo>();
 		if (!isSet(appInfoNode)) {
 			return applicationInfos;
 		}
 
 		for (String name : appInfoNode.keys()) {
-			applicationInfos.add(createApplicationInfo(name, appInfoNode.get(name)));
+			applicationInfos.add(createApplicationInfo(name, namespace, rhcDomain, appInfoNode.get(name)));
 		}
 		return applicationInfos;
 	}
 
-	private ApplicationInfo createApplicationInfo(String name, ModelNode appNode) throws DatatypeConfigurationException {
+	private ApplicationInfo createApplicationInfo(String name, String namespace, String rhcDomain, ModelNode appNode) throws DatatypeConfigurationException {
 		String uuid = getString(IOpenshiftJsonConstants.PROPERTY_UUID, appNode);
 		String embedded = getString(IOpenshiftJsonConstants.PROPERTY_EMBEDDED, appNode);
 		ICartridge cartrdige = new Cartridge(getString(IOpenshiftJsonConstants.PROPERTY_FRAMEWORK, appNode));
 		Date creationTime = getDate(IOpenshiftJsonConstants.PROPERTY_CREATION_TIME, appNode);
-		return new ApplicationInfo(name, uuid, embedded, cartrdige, creationTime);
+		return new ApplicationInfo(name, uuid, embedded, cartrdige, creationTime, namespace, rhcDomain);
 	}
 }

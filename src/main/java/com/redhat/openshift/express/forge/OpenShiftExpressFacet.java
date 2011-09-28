@@ -1,10 +1,8 @@
 package com.redhat.openshift.express.forge;
 
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Properties;
 
 import javax.inject.Inject;
 
@@ -20,7 +18,6 @@ import org.jboss.forge.maven.plugins.MavenPluginBuilder;
 import org.jboss.forge.project.dependencies.DependencyBuilder;
 import org.jboss.forge.project.facets.BaseFacet;
 import org.jboss.forge.project.facets.MetadataFacet;
-import org.jboss.forge.shell.ShellColor;
 import org.jboss.forge.shell.ShellMessages;
 import org.jboss.forge.shell.ShellPrintWriter;
 import org.jboss.forge.shell.ShellPrompt;
@@ -30,13 +27,14 @@ import org.jboss.forge.shell.util.NativeSystemCall;
 import com.redhat.openshift.express.core.ICartridge;
 import com.redhat.openshift.express.core.IOpenshiftService;
 import com.redhat.openshift.express.core.OpenShiftServiceFactory;
+import com.redhat.openshift.express.core.OpenshiftEndpointException;
 import com.redhat.openshift.express.core.internal.Application;
 import com.redhat.openshift.express.core.internal.InternalUser;
 
 @Alias("forge.openshift.express")
 public class OpenShiftExpressFacet extends BaseFacet {
-
-    private static final String EXPRESS_CONF = System.getProperty("user.home") + "/.openshift/express.conf";
+  
+    private static final int MAX_WAIT = 500;
 
     @Inject
     private ShellPrompt prompt;
@@ -65,34 +63,31 @@ public class OpenShiftExpressFacet extends BaseFacet {
         }
     }
 
-    private boolean internalInstall() throws Exception {
-        Properties conf = new Properties();
-        try {
-            conf.load(new FileReader(EXPRESS_CONF));
-            ShellMessages.info(out, "Loaded OpenShift configuration from " + EXPRESS_CONF);
-        } catch (Exception e) {
-            // Swallow
-        }
-
-        String defaultRhLogin = conf.getProperty("default_rhlogin");
+    private boolean internalInstall() throws Exception {       
         
-        if (configuration.getName() == null && defaultRhLogin == null) {
-           out.println(ShellColor.YELLOW, "***INFO*** If you do not have a Red Hat login, visit http://openshift.com");
-        }
-        
-        String name = getName(getProject().getFacet(MetadataFacet.class).getProjectName());
-        String rhLogin = getRhLogin(defaultRhLogin);
+        String name = getName();
+        String rhLogin = getRhLogin();
         // Wipe the singleton
         configuration.setName(null);
         configuration.setRhLogin(null);
-        String password = prompt.promptSecret("Enter your Red Hat Login password");
+        String password = Util.getPassword(prompt);
         IOpenshiftService openshift = OpenShiftServiceFactory.create();
-
-        Application application = openshift.createApplication(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password));
+        Application application = null;
+        try {
+            application = openshift.createApplication(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password));
+        } catch (OpenshiftEndpointException e) {
+           ShellMessages.error(out, "OpenShift failed to create the application");
+           ShellMessages.error(out, e.getMessage());
+           if (e.getCause().getClass() != null)
+              ShellMessages.error(out, e.getCause().getMessage());
+           return false;
+        }
+        
 
         if (!project.getProjectRoot().getChildDirectory(".git").exists()) {
             String[] params = { "init" };
-            NativeSystemCall.execFromPath("git", params, out, project.getProjectRoot());
+            if (NativeSystemCall.execFromPath("git", params, out, project.getProjectRoot()) != 0)
+               return false;
         }
 
         ShellMessages.info(out, "Waiting for OpenShift to propagate DNS");
@@ -103,8 +98,13 @@ public class OpenShiftExpressFacet extends BaseFacet {
 
         if (!Util.isOpenshiftRemotePresent(out, project)) {
             String[] remoteParams = { "remote", "add", "openshift", "-f", application.getGitUri() };
-            NativeSystemCall.execFromPath("git", remoteParams, out, project.getProjectRoot());
-        }
+            if (NativeSystemCall.execFromPath("git", remoteParams, out, project.getProjectRoot()) != 0) {
+               ShellMessages.error(out, "Failed to connect to OpenShift Express GIT repository, project is in an inconsistent state. Remove the .git directory manually, and delete the application using rhc-ctl-app -c destroy -a " + application.getName() + "-b");
+               return false;
+            }
+        } else
+           ShellMessages.info(out, "'openshift' remote alias already present in Git, using it");
+        
         addOpenShiftProfile();
 
         ShellMessages.success(out, "Application deployed to " + application.getApplicationUrl());
@@ -112,17 +112,17 @@ public class OpenShiftExpressFacet extends BaseFacet {
         return true;
     }
 
-    private String getName(String _default) {
+    private String getName() {
         if (configuration.getName() == null) {
-            return prompt.prompt("Enter the application name [" + _default + "] ", String.class, _default);
+            return Util.getName(project, prompt);
         } else {
             return configuration.getName();
         }
     }
 
-    private String getRhLogin(String _default) {
+    private String getRhLogin() {
         if (configuration.getRhLogin() == null) {
-            return prompt.prompt("Enter your Red Hat Login [" + _default + "] ", String.class, _default);
+            return Util.getRhLogin(out, prompt);
         } else {
             return configuration.getRhLogin();
         }
@@ -157,10 +157,10 @@ public class OpenShiftExpressFacet extends BaseFacet {
     }
 
     private boolean waitForExpress(String url, ShellPrintWriter out) {
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < MAX_WAIT; i++) {
             try {
                 if (i % 5 == 0)
-                    ShellMessages.info(out, "Trying to contact " + url + " (attempt " + (i + 1) + " of 200)");
+                    ShellMessages.info(out, "Trying to contact " + url + " (attempt " + (i + 1) + " of " + MAX_WAIT + ")");
                 HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
                 if (connection.getResponseCode() == HttpURLConnection.HTTP_OK)
                     return true;
