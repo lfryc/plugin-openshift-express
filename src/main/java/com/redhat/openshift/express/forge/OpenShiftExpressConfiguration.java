@@ -2,6 +2,7 @@ package com.redhat.openshift.express.forge;
 
 import javax.inject.Singleton;
 
+// TODO Make this project scoped -- bug in Forge
 @Singleton
 public class OpenShiftExpressConfiguration {
    

@@ -50,13 +50,13 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
 
     @Command
     public void deploy(PipeOut out) throws Exception {
+        String[] commitParams = { "commit", "-a", "-m", "\"deploy\"" };
+        NativeSystemCall.execFromPath("git", commitParams, out, project.getProjectRoot());
+
         /*
          * --progress is needed to see git status output from stderr
          */
-        String[] commitParams = { "commit", "-a", "-m", "\"deploy\"", "--progress" };
-        NativeSystemCall.execFromPath("git", commitParams, out, project.getProjectRoot());
-
-        String[] pushParams = { "push", "openshift", "HEAD", "-f", "--progress" };
+        String[] pushParams = { "push", "openshift", "HEAD", "-f", "--porcelain" };
         NativeSystemCall.execFromPath("git", pushParams, out, project.getProjectRoot());
     }
 

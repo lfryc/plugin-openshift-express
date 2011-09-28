@@ -20,6 +20,7 @@ import org.jboss.forge.maven.plugins.MavenPluginBuilder;
 import org.jboss.forge.project.dependencies.DependencyBuilder;
 import org.jboss.forge.project.facets.BaseFacet;
 import org.jboss.forge.project.facets.MetadataFacet;
+import org.jboss.forge.shell.ShellColor;
 import org.jboss.forge.shell.ShellMessages;
 import org.jboss.forge.shell.ShellPrintWriter;
 import org.jboss.forge.shell.ShellPrompt;
@@ -73,8 +74,15 @@ public class OpenShiftExpressFacet extends BaseFacet {
             // Swallow
         }
 
+        String defaultRhLogin = conf.getProperty("default_rhlogin");
+        
+        if (configuration.getName() == null && defaultRhLogin == null) {
+           out.println(ShellColor.YELLOW, "***INFO*** If you do not have a Red Hat login, visit http://openshift.com");
+        }
+        
         String name = getName(getProject().getFacet(MetadataFacet.class).getProjectName());
-        String rhLogin = getRhLogin(conf.getProperty("default_rhlogin"));
+        String rhLogin = getRhLogin(defaultRhLogin);
+        // Wipe the singleton
         configuration.setName(null);
         configuration.setRhLogin(null);
         String password = prompt.promptSecret("Enter your Red Hat Login password");
