@@ -19,41 +19,45 @@ import org.jboss.forge.shell.util.NativeSystemCall;
 
 import com.redhat.openshift.express.core.OpenshiftException;
 
-public @Alias("rhc-express") @RequiresProject @RequiresFacet(OpenShiftExpressFacet.class)
+public @Alias("rhc-express")
+@RequiresProject
+@RequiresFacet(OpenShiftExpressFacet.class)
 class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
-   
-   @Inject
-   private Event<InstallFacets> request;
-   
-   @Inject Project project;
-   
-   @Inject OpenShiftExpressConfiguration configuration;
-   
-   
-   @SetupCommand
-   public void setup(PipeOut out, @Option(name = "app") final String app, @Option(name = "rhlogin") final String rhLogin) throws OpenshiftException, IOException {
-      if (!project.hasFacet(OpenShiftExpressFacet.class))
-      {
-         configuration.setName(app);
-         configuration.setRhLogin(rhLogin);
-         request.fire(new InstallFacets(OpenShiftExpressFacet.class));
-      }
 
-      if (project.hasFacet(OpenShiftExpressFacet.class))
-      {
-         ShellMessages.success(out, "OpenShift Express (rhc-express) is installed.");
-      }
-      
-   }
-   
-   @Command
-   public void deploy(PipeOut out) throws IOException {
-      String[] commitParams = {"commit", "-a", "-m", "\"deploy\""};
-      NativeSystemCall.execFromPath("git", commitParams, out, project.getProjectRoot());
-      
-      String[] pushParams = {"push", "openshift", "HEAD", "-f"};
-      NativeSystemCall.execFromPath("git", pushParams, out, project.getProjectRoot());
-   }
+    @Inject
+    private Event<InstallFacets> request;
 
-   
+    @Inject
+    Project project;
+
+    @Inject
+    OpenShiftExpressConfiguration configuration;
+
+    @SetupCommand
+    public void setup(PipeOut out, @Option(name = "app") final String app, @Option(name = "rhlogin") final String rhLogin)
+            throws OpenshiftException, IOException {
+        if (!project.hasFacet(OpenShiftExpressFacet.class)) {
+            configuration.setName(app);
+            configuration.setRhLogin(rhLogin);
+            request.fire(new InstallFacets(OpenShiftExpressFacet.class));
+        }
+
+        if (project.hasFacet(OpenShiftExpressFacet.class)) {
+            ShellMessages.success(out, "OpenShift Express (rhc-express) is installed.");
+        }
+
+    }
+
+    @Command
+    public void deploy(PipeOut out) throws Exception {
+        /*
+         * --progress is needed to see git status output from stderr
+         */
+        String[] commitParams = { "commit", "-a", "-m", "\"deploy\"", "--progress" };
+        NativeSystemCall.execFromPath("git", commitParams, out, project.getProjectRoot());
+
+        String[] pushParams = { "push", "openshift", "HEAD", "-f", "--progress" };
+        NativeSystemCall.execFromPath("git", pushParams, out, project.getProjectRoot());
+    }
+
 }
