@@ -19,7 +19,7 @@ public class Util {
    private static final String EXPRESS_CONF = System.getProperty("user.home") + "/.openshift/express.conf";
    
    public static boolean isOpenshiftRemotePresent(ShellPrintWriter out, Project project) throws IOException{
-      String [] params = {"remote", "show", "openshift"};
+      String [] params = {"remote", "show", "-n", "openshift"};
       return NativeSystemCall.execFromPath("git", params, new DummyOut() , project.getProjectRoot()) == 0;
    }
    
