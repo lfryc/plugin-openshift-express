@@ -92,6 +92,8 @@ public class Util {
    
    public static String getName(Project project, ShellPrompt prompt) {
       String _default = project.getFacet(MetadataFacet.class).getProjectName();
+      _default = _default.replaceAll("[\\W_]", "");
+      _default = _default.substring(0, (_default.length() > 15 ? 15 : _default.length()));
       return prompt.prompt("Enter the application name [" + _default + "] ", String.class, _default);
    }
 
