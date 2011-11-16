@@ -12,7 +12,6 @@ import org.jboss.forge.shell.ShellColor;
 import org.jboss.forge.shell.ShellMessages;
 import org.jboss.forge.shell.ShellPrintWriter;
 import org.jboss.forge.shell.ShellPrompt;
-import org.jboss.forge.shell.util.NativeSystemCall;
 
 public class Util {
    
@@ -27,6 +26,7 @@ public class Util {
    }
    
    @Alternative
+   @SuppressWarnings("unused")
    private static class DummyOut implements ShellPrintWriter {
       
       public DummyOut() {

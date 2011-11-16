@@ -18,13 +18,13 @@ import org.jboss.forge.shell.plugins.RequiresProject;
 import org.jboss.forge.shell.plugins.SetupCommand;
 import org.jboss.forge.shell.util.NativeSystemCall;
 
-import com.redhat.openshift.express.core.ICartridge;
-import com.redhat.openshift.express.core.IOpenshiftService;
+import com.openshift.express.client.ICartridge;
+import com.openshift.express.client.IOpenShiftService;
+import com.openshift.express.client.OpenShiftException;
+import com.openshift.express.internal.client.ApplicationInfo;
+import com.openshift.express.internal.client.InternalUser;
+import com.openshift.express.internal.client.UserInfo;
 import com.redhat.openshift.express.core.OpenShiftServiceFactory;
-import com.redhat.openshift.express.core.OpenshiftException;
-import com.redhat.openshift.express.core.internal.ApplicationInfo;
-import com.redhat.openshift.express.core.internal.InternalUser;
-import com.redhat.openshift.express.core.internal.UserInfo;
 
 public @Alias("rhc-express")
 @RequiresProject
@@ -44,7 +44,7 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
 
     @SetupCommand
     public void setup(PipeOut out, @Option(name = "app") final String app, @Option(name = "rhlogin") final String rhLogin)
-            throws OpenshiftException, IOException {
+            throws OpenShiftException, IOException {
         if (!project.hasFacet(OpenShiftExpressFacet.class)) {
             configuration.setName(app);
             configuration.setRhLogin(rhLogin);
@@ -80,8 +80,8 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
         String name = Util.getName(project, prompt);
         String password = Util.getPassword(prompt);
         
-        IOpenshiftService openshiftService = OpenShiftServiceFactory.create();
-        String status = openshiftService.getStatus(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password));
+        IOpenShiftService openshiftService = OpenShiftServiceFactory.create();
+        String status = openshiftService.getStatus(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password, openshiftService));
         out.print(status);
     }
     
@@ -93,8 +93,8 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
         boolean confirm = prompt.promptBoolean("About to destroy application " + name + " on OpenShift Express. Are you sure?", true);
         
         if (confirm) {
-           IOpenshiftService openshiftService = OpenShiftServiceFactory.create();
-           openshiftService.destroyApplication(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password));
+           IOpenShiftService openshiftService = OpenShiftServiceFactory.create();
+           openshiftService.destroyApplication(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password, openshiftService));
            ShellMessages.success(out, "Destroyed application " + name + " on OpenShift Express");
         }
     }
@@ -103,8 +103,8 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
     public void list(PipeOut out) throws Exception {
         String rhLogin = Util.getRhLogin(out, prompt);
         String password = Util.getPassword(prompt);
-        IOpenshiftService openshiftService = OpenShiftServiceFactory.create();
-        UserInfo info = openshiftService.getUserInfo(new InternalUser(rhLogin, password));
+        IOpenShiftService openshiftService = OpenShiftServiceFactory.create();
+        UserInfo info = openshiftService.getUserInfo(new InternalUser(rhLogin, password, openshiftService));
         ShellMessages.info(out, "Applications on OpenShift Express");
         for (ApplicationInfo app : info.getApplicationInfos()) {
            out.println(app.toString());

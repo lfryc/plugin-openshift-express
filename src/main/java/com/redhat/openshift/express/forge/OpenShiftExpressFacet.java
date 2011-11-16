@@ -17,19 +17,18 @@ import org.jboss.forge.maven.plugins.MavenPluginAdapter;
 import org.jboss.forge.maven.plugins.MavenPluginBuilder;
 import org.jboss.forge.project.dependencies.DependencyBuilder;
 import org.jboss.forge.project.facets.BaseFacet;
-import org.jboss.forge.project.facets.MetadataFacet;
 import org.jboss.forge.shell.ShellMessages;
 import org.jboss.forge.shell.ShellPrintWriter;
 import org.jboss.forge.shell.ShellPrompt;
 import org.jboss.forge.shell.plugins.Alias;
 import org.jboss.forge.shell.util.NativeSystemCall;
 
-import com.redhat.openshift.express.core.ICartridge;
-import com.redhat.openshift.express.core.IOpenshiftService;
+import com.openshift.express.client.IApplication;
+import com.openshift.express.client.ICartridge;
+import com.openshift.express.client.IOpenShiftService;
+import com.openshift.express.client.OpenShiftEndpointException;
+import com.openshift.express.internal.client.InternalUser;
 import com.redhat.openshift.express.core.OpenShiftServiceFactory;
-import com.redhat.openshift.express.core.OpenshiftEndpointException;
-import com.redhat.openshift.express.core.internal.Application;
-import com.redhat.openshift.express.core.internal.InternalUser;
 
 @Alias("forge.openshift.express")
 public class OpenShiftExpressFacet extends BaseFacet {
@@ -71,11 +70,11 @@ public class OpenShiftExpressFacet extends BaseFacet {
         configuration.setName(null);
         configuration.setRhLogin(null);
         String password = Util.getPassword(prompt);
-        IOpenshiftService openshift = OpenShiftServiceFactory.create();
-        Application application = null;
+        IOpenShiftService openshift = OpenShiftServiceFactory.create();
+        IApplication application = null;
         try {
-            application = openshift.createApplication(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password));
-        } catch (OpenshiftEndpointException e) {
+            application = openshift.createApplication(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password, openshift));
+        } catch (OpenShiftEndpointException e) {
            ShellMessages.error(out, "OpenShift failed to create the application");
            ShellMessages.error(out, e.getMessage());
            if (e.getCause().getClass() != null)
