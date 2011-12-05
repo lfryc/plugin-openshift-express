@@ -74,7 +74,26 @@ public class Util {
          // TODO Auto-generated method stub
          return null;
       }
-      
+
+      @Override
+      public void write(int b) {
+         // TODO Auto-generated method stub
+      }
+
+      @Override
+      public void write(byte[] b) {
+         // TODO Auto-generated method stub
+      }
+
+      @Override
+      public void write(byte[] b, int offset, int length) {
+         // TODO Auto-generated method stub
+      }
+
+      @Override
+      public void flush() {
+         // TODO Auto-generated method stub}
+      }
    }
    
    public static String getDefaultRhLogin(ShellPrintWriter out) {
