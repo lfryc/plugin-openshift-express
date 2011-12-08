@@ -66,11 +66,13 @@ public class OpenShiftExpressFacet extends BaseFacet {
         
         String name = getName();
         String rhLogin = getRhLogin();
+        String baseUrl = Util.getDefaultBaseUrl(out);
+
         // Wipe the singleton
         configuration.setName(null);
         configuration.setRhLogin(null);
         String password = Util.getPassword(prompt);
-        IOpenShiftService openshift = OpenShiftServiceFactory.create();
+        IOpenShiftService openshift = OpenShiftServiceFactory.create(baseUrl);
         IApplication application = null;
         try {
             application = openshift.createApplication(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password, openshift));

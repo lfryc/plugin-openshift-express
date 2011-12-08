@@ -79,8 +79,9 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
         String rhLogin = Util.getRhLogin(out, prompt);
         String name = Util.getName(project, prompt);
         String password = Util.getPassword(prompt);
-        
-        IOpenShiftService openshiftService = OpenShiftServiceFactory.create();
+        String baseUrl = Util.getDefaultBaseUrl(out);
+
+        IOpenShiftService openshiftService = OpenShiftServiceFactory.create(baseUrl);
         String status = openshiftService.getStatus(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password, openshiftService));
         out.print(status);
     }
@@ -90,10 +91,12 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
         String rhLogin = Util.getRhLogin(out, prompt);
         String name = Util.getName(project, prompt);
         String password = Util.getPassword(prompt);
+        String baseUrl = Util.getDefaultBaseUrl(out);
+
         boolean confirm = prompt.promptBoolean("About to destroy application " + name + " on OpenShift Express. Are you sure?", true);
         
         if (confirm) {
-           IOpenShiftService openshiftService = OpenShiftServiceFactory.create();
+           IOpenShiftService openshiftService = OpenShiftServiceFactory.create(baseUrl);
            openshiftService.destroyApplication(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password, openshiftService));
            ShellMessages.success(out, "Destroyed application " + name + " on OpenShift Express");
         }
@@ -103,7 +106,9 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
     public void list(PipeOut out) throws Exception {
         String rhLogin = Util.getRhLogin(out, prompt);
         String password = Util.getPassword(prompt);
-        IOpenShiftService openshiftService = OpenShiftServiceFactory.create();
+        String baseUrl = Util.getDefaultBaseUrl(out);
+
+        IOpenShiftService openshiftService = OpenShiftServiceFactory.create(baseUrl);
         UserInfo info = openshiftService.getUserInfo(new InternalUser(rhLogin, password, openshiftService));
         ShellMessages.info(out, "Applications on OpenShift Express");
         for (ApplicationInfo app : info.getApplicationInfos()) {

@@ -108,6 +108,24 @@ public class Util {
       return conf.getProperty("default_rhlogin");
    }
    
+   public static String getDefaultBaseUrl(ShellPrintWriter out) {
+      Properties conf = new Properties();
+      try {
+          conf.load(new FileReader(EXPRESS_CONF));
+          ShellMessages.info(out, "Loaded OpenShift configuration from " + EXPRESS_CONF);
+      } catch (Exception e) {
+          // Swallow
+      }
+
+      String hostname = conf.getProperty("libra_server");
+
+      if (hostname == null || hostname.trim().length() == 0) {
+         return null;
+      } else {
+         return "https://".concat(hostname);
+      }
+   }
+
    public static String getName(Project project, ShellPrompt prompt) {
       String _default = project.getFacet(MetadataFacet.class).getProjectName();
       _default = _default.replaceAll("[\\W_]", "");
