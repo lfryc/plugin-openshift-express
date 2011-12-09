@@ -98,7 +98,7 @@ public class OpenShiftExpressFacet extends BaseFacet {
         if (!Util.isOpenshiftRemotePresent(out, project)) {
             String[] remoteParams = { "remote", "add", "openshift", "-f", application.getGitUri() };
             if (NativeSystemCall.execFromPath("git", remoteParams, out, project.getProjectRoot()) != 0) {
-               ShellMessages.error(out, "Failed to connect to OpenShift Express GIT repository, project is in an inconsistent state. Remove the .git directory manually, and delete the application using rhc-ctl-app -c destroy -a " + application.getName() + "-b");
+               ShellMessages.error(out, "Failed to connect to OpenShift Express GIT repository, project is in an inconsistent state. Remove the .git directory manually, and delete the application using rhc-ctl-app -c destroy -a " + application.getName() + " -b");
                return false;
             }
         } else
