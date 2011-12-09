@@ -110,9 +110,9 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
 
         IOpenShiftService openshiftService = OpenShiftServiceFactory.create(baseUrl);
         UserInfo info = openshiftService.getUserInfo(new InternalUser(rhLogin, password, openshiftService));
-        ShellMessages.info(out, "Applications on OpenShift Express");
+        out.println("\nApplications on OpenShift Express:\n");
         for (ApplicationInfo app : info.getApplicationInfos()) {
-           out.println(app.toString());
+           out.println(Util.formatApplicationInfo(app, info.getNamespace(), info.getRhcDomain()));
         }
     }
 
