@@ -116,7 +116,7 @@ public class Util {
           // Swallow
       }
 
-      return conf.getProperty("default_rhlogin");
+      return Util.unquote(conf.getProperty("default_rhlogin"));
    }
    
    public static String getDefaultBaseUrl(ShellPrintWriter out) {
@@ -128,7 +128,7 @@ public class Util {
           // Swallow
       }
 
-      String hostname = conf.getProperty("libra_server");
+      String hostname = Util.unquote(conf.getProperty("libra_server"));
 
       if (hostname == null || hostname.trim().length() == 0) {
          return null;
@@ -211,4 +211,20 @@ public class Util {
       return result.toString();
    }
 
+   // unwraps strings wrapped in double or single quotes
+   // intentionally package-protected
+   static String unquote(String str) {
+      if (str == null || str.length() < 2) {
+         return str;
+      }
+
+      char a = str.charAt(0);
+      char z = str.charAt(str.length() - 1);
+
+      if (z == a && (z == '"' || z == '\'')) {
+          return str.substring(1, str.length() - 1);
+      } else {
+         return str;
+      }
+   }
 }
