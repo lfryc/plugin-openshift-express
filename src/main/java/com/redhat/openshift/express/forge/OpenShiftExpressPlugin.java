@@ -42,8 +42,8 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
     
     @Inject ShellPrompt prompt;
 
-    @SetupCommand
-    public void setup(PipeOut out, @Option(name = "app") final String app, @Option(name = "rhlogin") final String rhLogin)
+    @SetupCommand(help = "Install and set up the OpenShift Express plugin")
+    public void setup(PipeOut out, @Option(name = "app", help = "Application name (alphanumeric - max 32 chars)") final String app, @Option(name = "rhlogin", help = "Red Hat login (RHN or OpenShift login with OpenShift Express access)") final String rhLogin)
             throws OpenShiftException, IOException {
         if (!project.hasFacet(OpenShiftExpressFacet.class)) {
             configuration.setName(app);
@@ -57,7 +57,7 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
 
     }
 
-    @Command
+    @Command(help = "Deploys the current application to OpenShift Express")
     public void deploy(PipeOut out) throws Exception {
         String[] commitParams = { "commit", "-a", "-m", "\"deploy\"" };
         NativeSystemCall.execFromPath("git", commitParams, out, project.getProjectRoot());
@@ -74,7 +74,7 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
         NativeSystemCall.execFromPath("git", pushParams, out, project.getProjectRoot());
     }
     
-    @Command
+    @Command(help = "Checks the status of a deployed application")
     public void status(PipeOut out) throws Exception {
         String rhLogin = Util.getRhLogin(out, prompt);
         String name = Util.getName(project, prompt);
@@ -86,7 +86,7 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
         out.print(status);
     }
     
-    @Command
+    @Command(help = "Removes the current application from OpenShift Express")
     public void destroy(PipeOut out) throws Exception {
         String rhLogin = Util.getRhLogin(out, prompt);
         String name = Util.getName(project, prompt);
@@ -102,7 +102,7 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
         }
     }
     
-    @Command
+    @Command(help = "Displays information about your OpenShift Express applications")
     public void list(PipeOut out) throws Exception {
         String rhLogin = Util.getRhLogin(out, prompt);
         String password = Util.getPassword(prompt);
