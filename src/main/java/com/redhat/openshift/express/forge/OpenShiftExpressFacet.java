@@ -26,6 +26,7 @@ import org.jboss.forge.shell.util.NativeSystemCall;
 import com.openshift.express.client.IApplication;
 import com.openshift.express.client.ICartridge;
 import com.openshift.express.client.IOpenShiftService;
+import com.openshift.express.client.InvalidCredentialsOpenShiftException;
 import com.openshift.express.client.OpenShiftEndpointException;
 import com.openshift.express.internal.client.InternalUser;
 import com.redhat.openshift.express.core.OpenShiftServiceFactory;
@@ -75,7 +76,10 @@ public class OpenShiftExpressFacet extends BaseFacet {
         IOpenShiftService openshift = OpenShiftServiceFactory.create(baseUrl);
         IApplication application = null;
         try {
-            application = openshift.createApplication(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password, openshift));
+           application = openshift.createApplication(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password, openshift));
+        } catch (InvalidCredentialsOpenShiftException e) {
+           Util.displayCredentialsError(out, e);
+           return false;
         } catch (OpenShiftEndpointException e) {
            ShellMessages.error(out, "OpenShift failed to create the application");
            ShellMessages.error(out, e.getMessage());

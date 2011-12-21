@@ -17,6 +17,7 @@ import org.jboss.forge.shell.ShellMessages;
 import org.jboss.forge.shell.ShellPrintWriter;
 import org.jboss.forge.shell.ShellPrompt;
 
+import com.openshift.express.client.InvalidCredentialsOpenShiftException;
 import com.openshift.express.internal.client.ApplicationInfo;
 import com.openshift.express.internal.client.EmbeddableCartridgeInfo;
 
@@ -146,7 +147,7 @@ public class Util {
    public static String getRhLogin(ShellPrintWriter out, ShellPrompt prompt) {
       String _default = getDefaultRhLogin(out);
       if (_default == null) {
-         ShellMessages.info(out,"If you do not have a Red Hat login, visit http://openshift.com");
+         ShellMessages.info(out, "If you do not have a Red Hat login, visit http://openshift.com");
       }
       return prompt.prompt("Enter your Red Hat Login [" + _default + "] ", String.class, _default);
    }
@@ -154,7 +155,11 @@ public class Util {
    public static String getPassword(ShellPrompt prompt) {
       return prompt.promptSecret("Enter your Red Hat Login password");
    }
-   
+
+   public static void displayCredentialsError(ShellPrintWriter out, InvalidCredentialsOpenShiftException e) {
+      out.println("\nInvalid user credentials.  Please check your Red Hat login and password and try again.\n");
+   }
+
    public static String formatApplicationInfo(ApplicationInfo app, String namespace, String domain) {
       Map<String, String> attrs = new LinkedHashMap<String, String>();
       attrs.put("Framework", app.getCartridge().getName());

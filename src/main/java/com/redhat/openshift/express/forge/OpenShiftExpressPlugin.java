@@ -20,6 +20,7 @@ import org.jboss.forge.shell.util.NativeSystemCall;
 
 import com.openshift.express.client.ICartridge;
 import com.openshift.express.client.IOpenShiftService;
+import com.openshift.express.client.InvalidCredentialsOpenShiftException;
 import com.openshift.express.client.OpenShiftException;
 import com.openshift.express.internal.client.ApplicationInfo;
 import com.openshift.express.internal.client.InternalUser;
@@ -82,8 +83,12 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
         String baseUrl = Util.getDefaultBaseUrl(out);
 
         IOpenShiftService openshiftService = OpenShiftServiceFactory.create(baseUrl);
-        String status = openshiftService.getStatus(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password, openshiftService));
-        out.print(status);
+        try {
+           String status = openshiftService.getStatus(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password, openshiftService));
+           out.print(status);
+        } catch (InvalidCredentialsOpenShiftException e) {
+           Util.displayCredentialsError(out, e);
+        }
     }
     
     @Command(help = "Removes the current application from OpenShift Express")
@@ -97,8 +102,12 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
         
         if (confirm) {
            IOpenShiftService openshiftService = OpenShiftServiceFactory.create(baseUrl);
-           openshiftService.destroyApplication(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password, openshiftService));
-           ShellMessages.success(out, "Destroyed application " + name + " on OpenShift Express");
+           try {
+              openshiftService.destroyApplication(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password, openshiftService));
+              ShellMessages.success(out, "Destroyed application " + name + " on OpenShift Express");
+           } catch (InvalidCredentialsOpenShiftException e) {
+              Util.displayCredentialsError(out, e);
+           }
         }
     }
     
@@ -109,10 +118,14 @@ class OpenShiftExpressPlugin implements org.jboss.forge.shell.plugins.Plugin {
         String baseUrl = Util.getDefaultBaseUrl(out);
 
         IOpenShiftService openshiftService = OpenShiftServiceFactory.create(baseUrl);
-        UserInfo info = openshiftService.getUserInfo(new InternalUser(rhLogin, password, openshiftService));
-        out.println("\nApplications on OpenShift Express:\n");
-        for (ApplicationInfo app : info.getApplicationInfos()) {
-           out.println(Util.formatApplicationInfo(app, info.getNamespace(), info.getRhcDomain()));
+        try {
+           UserInfo info = openshiftService.getUserInfo(new InternalUser(rhLogin, password, openshiftService));
+           out.println("\nApplications on OpenShift Express:\n");
+           for (ApplicationInfo app : info.getApplicationInfos()) {
+              out.println(Util.formatApplicationInfo(app, info.getNamespace(), info.getRhcDomain()));
+           }
+        } catch (InvalidCredentialsOpenShiftException e) {
+           Util.displayCredentialsError(out, e);
         }
     }
 
